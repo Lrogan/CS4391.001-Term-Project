@@ -41,10 +41,17 @@ def brightnessAdjust(imglist):
       pxl = img.shape[0] * img.shape[1]
       aver_bright = value / pxl
       aver_bright_percent = (aver_bright / 255)
+
       if(aver_bright_percent < .4):
-        return 
+        diff_percent = .4 - aver_bright_percent
+        flat_add = diff_percent * 255
+        img = img + flat_add
+
       elif(aver_bright_percent > .6):
-        return 
+        diff_percent = aver_bright_percent - .6
+        flat_add = diff_percent * 255
+        img = img + flat_add
+
       BAimages.append(img)
     return BAimages
 
@@ -55,18 +62,38 @@ def resizeImgs(imgList, size):
    for img in imgList:
       resized = cv.resize(img, dim, interpolation=cv.INTER_AREA)
       imgs.append(resized)
+   return imgs
+
+# Extract Keypoints and Descriptors
+def extractSIFT(imgList):
+   
+
+bedroomImgs, coastImgs, forestImgs = load_images_from_folder(os.getcwd())
 
 
-bedroomImgs, coatImgs, forestImgs = load_images_from_folder(os.getcwd())
-
+# For each set of images adjust brightness and greate two different arrays of square size 200 and 50
 bedroomImgs = brightnessAdjust(bedroomImgs)
 bedroomImgs200 = resizeImgs(bedroomImgs, 200)
 bedroomImgs50 = resizeImgs(bedroomImgs, 50)
 
-coatImgs = brightnessAdjust(coatImgs)
-coatImgs = resizeImgs(coatImgs, 200)
-coatImgs = resizeImgs(coatImgs, 50)
+coastImgs = brightnessAdjust(coastImgs)
+coastImgs200 = resizeImgs(coastImgs, 200)
+coastImgs50 = resizeImgs(coastImgs, 50)
 
 forestImgs = brightnessAdjust(forestImgs)
-forestImgs = resizeImgs(forestImgs, 200)
-forestImgs = resizeImgs(forestImgs, 50)
+forestImgs200 = resizeImgs(forestImgs, 200)
+forestImgs50 = resizeImgs(forestImgs, 50)
+
+# Create SIFT
+sift = cv.SIFT_create()
+
+bedroomKeypoints200, bedroomDescriptors200 = extractSIFT(bedroomImgs200)
+bredroomKeypoints50, bedroomDescriptors50 = extractSIFT(bedroomImgs50)
+
+coastKeypoints200, bedroomDescriptors200 = extractSIFT(bedroomImgs200)
+bredroomKeypoints50, bedroomDescriptors50 = extractSIFT(bedroomImgs50)
+
+bedroomKeypoints200, bedroomDescriptors200 = extractSIFT(bedroomImgs200)
+bredroomKeypoints50, bedroomDescriptors50 = extractSIFT(bedroomImgs50)
+
+  
