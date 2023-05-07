@@ -21,6 +21,7 @@ def load_images_from_folder(folder):
     imgs200 = []
     descriptors50 = []
     descriptors200 = []
+    label = []
     for filename in os.listdir(currPath):
         currPath = os.path.join(folder, filename)
         for file in os.listdir(currPath):
@@ -38,7 +39,14 @@ def load_images_from_folder(folder):
           descriptors50.append(desc50)
           descriptors200.append(desc200)
 
-    return imgs50, imgs200, descriptors50, descriptors200
+          if 'bedroom' in filePath.lower():
+            label.append(0)
+          elif 'coast' in filePath.lower():
+            label.append(1)
+          elif 'forest' in filePath.lower():
+            label.append(2)
+          
+    return imgs50, imgs200, descriptors50, descriptors200, label
 
 # Determine adjust brightness according to avg brightness
 def brightnessAdjust(img):
@@ -65,7 +73,7 @@ def extractSIFT(img):
   if desc is None:
       desc = np.zeros((1, 128))
 
-  # homogenize shape of descriptors
+  # homogenize shape of descriptors so that its always (128, X where X >= 128)
   if desc.shape[0] < 128:
       desc = np.vstack((desc, np.zeros((128 - desc.shape[0], 128))))
   if desc.shape[0] > 128:
@@ -75,29 +83,38 @@ def extractSIFT(img):
   desc = np.array(desc.flatten())
   return desc
 
+def calcPercents(res, y):
+  return
+
 # Load and process training images including SIFT descriptors
-imgs50, imgs200, descriptors50, descriptors200 = load_images_from_folder(os.path.join(os.getcwd(), 'ProjData', 'Train'))
+print("Loading Training Images.")
+imgs50, imgs200, descriptors50, descriptors200, labels = load_images_from_folder(os.path.join(os.getcwd(), 'ProjData', 'Train'))
 imgs50 = np.array(imgs50)
 imgs200 = np.array(imgs200)
 descriptors50 = np.array(descriptors50)
 descriptors200 = np.array(descriptors200)
+labels = np.array(labels)
 
-# Load and consolidate test images
-test50, test200, testDescriptors50, testDescriptors200 = load_images_from_folder(os.path.join(os.getcwd(), 'ProjData', 'Test'))
+# Load and consolidate test images including SIFT descriptors
+print("Loading Test Images.")
+test50, test200, testDescriptors50, testDescriptors200, testLabels = load_images_from_folder(os.path.join(os.getcwd(), 'ProjData', 'Test'))
+test50 = np.array(test50)
+test200 = np.array(test200)
+testDescriptors50 = np.array(testDescriptors50)
+testDescriptors200 = np.array(testDescriptors200)
+testLabels = np.array(testLabels)
 
-X = 0
 
 # KNN Raw
-knn = cv.ml.KNearest_create()
-k = np.arange(10)
-train_labels = np.repeat(k, 250)
+print("KNN Raw")
+knnRaw = cv.ml.KNearest_create()
+XRaw = np.array([i.flatten() for i in imgs50], dtype=np.float32)
+y = labels
+knnRaw.train(XRaw, cv.ml.ROW_SAMPLE, y)
 
-# knn.train(imgs50, cv.ml.ROW_SAMPLE, train_labels)
-# ret,result,neighbours,dist = knn.findNearest(imgs0,k=5)
-# print(str(ret))
-# print(str(result))
-# print(str(neighbours))
-# print(str(dist))
+XRawTest = np.array([i.flatten() for i in test50], dtype=np.float32)
+_, resRaw, _, _ = knnRaw.findNearest(XRawTest,k=1)
+calcPercents(resRaw, y)
 
 
 # KNN SIFT
