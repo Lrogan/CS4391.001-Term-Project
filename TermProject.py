@@ -112,7 +112,7 @@ def calcPercents(res, y, classy):
     results["FN"] = falseNeg
   
   print(f"{classy} Results In Percentage")
-  print("True Positive: {:.2f}%, False Positive: {:.2f}%, False Negative: {:.2f}%".format(results['TP'] * 100, results['FP'] * 100, results['FN'] * 100))
+  print("True Positive: {:.2f}%\nFalse Positive: {:.2f}%\nFalse Negative: {:.2f}%".format(results['TP'] * 100, results['FP'] * 100, results['FN'] * 100))
 
 # Load and process training images including SIFT descriptors
 print("Loading Training Images.")
@@ -134,7 +134,6 @@ testLabels = np.array(testLabels)
 
 
 # KNN Raw
-print("KNN Raw")
 knnSIFT = cv.ml.KNearest_create()
 XRaw = np.array([i.flatten() for i in imgs50], dtype=np.float32)
 yRaw = labels
@@ -146,7 +145,6 @@ knnSIFT.train(XRaw, cv.ml.ROW_SAMPLE, yRaw)
 # calcPercents(resRaw, y)
 
 # KNN SIFT
-print("KNN SIFT")
 knnSIFT = cv.ml.KNearest_create()
 
 # Creates a list consisting of two lists alternated
@@ -157,10 +155,10 @@ knnSIFT.train(XSIFT, cv.ml.ROW_SAMPLE, ySIFT)
 XSIFTTest = np.array([val for pair in zip(testDescriptors50, testDescriptors200) for val in pair]).astype('float32')
 ySIFTTest = np.array([val for pair in zip(testLabels, testLabels) for val in pair]).astype('float32')
 _, resSIFT, _, _ = knnSIFT.findNearest(XSIFTTest,k=1)
+print("\n")
 calcPercents(resSIFT, ySIFTTest, "KNN SIFT")
 
-# KNN SVM
-print("KNN SVM")
+# SVM
 svm = cv.ml.SVM_create()
 svm.setType(cv.ml.SVM_C_SVC)
 svm.setKernel(cv.ml.SVM_LINEAR)
@@ -173,4 +171,5 @@ svm.train(XSVM, cv.ml.ROW_SAMPLE, ySVM)
 XSVMTest = np.array([val for pair in zip(testDescriptors50, testDescriptors200) for val in pair])
 ySVMTest = np.array([val for pair in zip(testLabels, testLabels) for val in pair])
 resSVM = svm.predict(XSVMTest)[1]
-calcPercents(resSVM, ySVMTest, "KNN SVM")
+print("\n")
+calcPercents(resSVM, ySVMTest, "SVM")
