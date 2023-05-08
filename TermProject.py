@@ -83,8 +83,36 @@ def extractSIFT(img):
   desc = np.array(desc.flatten())
   return desc
 
-def calcPercents(res, y):
-  return
+def calcPercents(res, y, classy):
+  results = {
+    "TP": 0,
+    "FP": 0,
+    "FN": 0
+  }
+  for classifier in range(3):
+    total = 0
+    truePos = 0
+    falsePos = 0
+    falseNeg = 0
+    for index, label in enumerate(y):
+        if label == classifier:
+            total += 1
+            if res[index] == label:
+                truePos += 1
+            else:
+                falseNeg += 1
+        elif res[index] == classifier:
+            total += 1
+            falsePos += 1
+    truePos /= total
+    falsePos /= total
+    falseNeg /= total
+    results["TP"] = truePos
+    results["FP"] = falsePos
+    results["FN"] = falseNeg
+  
+  print(f"{classy} Results In Percentage")
+  print("True Positive: {:.2f}%, False Positive: {:.2f}%, False Negative: {:.2f}%".format(results['TP'] * 100, results['FP'] * 100, results['FN'] * 100))
 
 # Load and process training images including SIFT descriptors
 print("Loading Training Images.")
@@ -107,18 +135,42 @@ testLabels = np.array(testLabels)
 
 # KNN Raw
 print("KNN Raw")
-knnRaw = cv.ml.KNearest_create()
+knnSIFT = cv.ml.KNearest_create()
 XRaw = np.array([i.flatten() for i in imgs50], dtype=np.float32)
-y = labels
-knnRaw.train(XRaw, cv.ml.ROW_SAMPLE, y)
+yRaw = labels
+knnSIFT.train(XRaw, cv.ml.ROW_SAMPLE, yRaw)
 
-XRawTest = np.array([i.flatten() for i in test50], dtype=np.float32)
-_, resRaw, _, _ = knnRaw.findNearest(XRawTest,k=1)
-calcPercents(resRaw, y)
-
+# Don't have to do this due to instructions saying only 2 classifiers needed to be tested, but the training still needs to be done
+# XRawTest = np.array([i.flatten() for i in test50], dtype=np.float32)
+# _, resRaw, _, _ = knnRaw.findNearest(XRawTest,k=1)
+# calcPercents(resRaw, y)
 
 # KNN SIFT
-# train_labels = None
+print("KNN SIFT")
+knnSIFT = cv.ml.KNearest_create()
 
+# Creates a list consisting of two lists alternated
+XSIFT = np.array([val for pair in zip(descriptors50, descriptors200) for val in pair]).astype('float32')
+ySIFT = np.array([val for pair in zip(labels, labels) for val in pair]).astype('float32')
+knnSIFT.train(XSIFT, cv.ml.ROW_SAMPLE, ySIFT)
 
-# # KNN SVM
+XSIFTTest = np.array([val for pair in zip(testDescriptors50, testDescriptors200) for val in pair]).astype('float32')
+ySIFTTest = np.array([val for pair in zip(testLabels, testLabels) for val in pair]).astype('float32')
+_, resSIFT, _, _ = knnSIFT.findNearest(XSIFTTest,k=1)
+calcPercents(resSIFT, ySIFTTest, "KNN SIFT")
+
+# KNN SVM
+print("KNN SVM")
+svm = cv.ml.SVM_create()
+svm.setType(cv.ml.SVM_C_SVC)
+svm.setKernel(cv.ml.SVM_LINEAR)
+svm.setTermCriteria((cv.TERM_CRITERIA_MAX_ITER, 100, 1e-6))
+
+XSVM = np.array([val for pair in zip(descriptors50, descriptors200) for val in pair])
+ySVM = np.array([val for pair in zip(labels, labels) for val in pair])
+svm.train(XSVM, cv.ml.ROW_SAMPLE, ySVM)
+
+XSVMTest = np.array([val for pair in zip(testDescriptors50, testDescriptors200) for val in pair])
+ySVMTest = np.array([val for pair in zip(testLabels, testLabels) for val in pair])
+resSVM = svm.predict(XSVMTest)[1]
+calcPercents(resSVM, ySVMTest, "KNN SVM")
